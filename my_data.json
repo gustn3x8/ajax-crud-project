@@ -1,0 +1,70 @@
+{
+  "posts": [
+    {
+      "id": "1",
+      "title": "AJAX란 무엇인가?",
+      "author": "김코딩",
+      "views": 150
+    },
+    {
+      "id": "2",
+      "title": "JSON-Server 설치하기",
+      "author": "이개발",
+      "views": 200
+    },
+    {
+      "id": "3",
+      "title": "REST API 기초",
+      "author": "박엔지",
+      "views": 300
+    },
+    {
+      "id": "4",
+      "title": "JavaScript 비동기 처리",
+      "author": "최자바",
+      "views": 120
+    },
+    {
+      "id": "5",
+      "title": "HTML 기본 구조",
+      "author": "김코딩",
+      "views": 50
+    },
+    {
+      "id": "6",
+      "title": "CSS 선택자 마스터",
+      "author": "이개발",
+      "views": 250
+    },
+    {
+      "id": "7",
+      "title": "Node.js 시작하기",
+      "author": "박엔지",
+      "views": 180
+    },
+    {
+      "id": "8",
+      "title": "Git과 Github",
+      "author": "최자바",
+      "views": 400
+    },
+    {
+      "id": "9",
+      "title": "CRUD 개념 이해",
+      "author": "김코딩",
+      "views": 220
+    },
+    {
+      "id": "10",
+      "title": "Netlify 배포하기",
+      "author": "이개발",
+      "views": 310
+    },
+    {
+      "title": "CSS 기초",
+      "author": "박정운",
+      "views": 711,
+      "id": "acfd"
+    }
+  ]
+}

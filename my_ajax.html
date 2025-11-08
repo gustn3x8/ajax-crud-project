@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AJAX CRUD page</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        #main-container { display: flex; gap: 30px; }
+        #form-section { flex-basis: 300px; }
+        #post-list-section { flex-basis: 500px; }
+        form { display: flex; flex-direction: column; gap: 10px; }
+        input { padding: 8px; font-size: 1em; }
+        button { padding: 10px; background-color: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; }
+        button:hover { background-color: #0056b3; }
+        #post-list { margin-top: 20px; }
+        .post-item { border: 1px solid #ccc; padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .post-item h3 { margin-top: 0; }
+        .post-item .buttons { margin-top: 10px; display: flex; gap: 10px; }
+        .post-item .btn-edit { background-color: #ffc107; }
+        .post-item .btn-edit:hover { background-color: #e0a800; }
+        .post-item .btn-delete { background-color: #dc3545; }
+        .post-item .btn-delete:hover { background-color: #c82333; }
+        #edit-form-section {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: white; padding: 20px;
+            border: 2px solid #000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 100;
+        }
+        #edit-form-section .btn-cancel { background-color: #6c757d; }
+        #edit-form-section .btn-cancel:hover { background-color: #5a6268; }
+    </style>
+</head>
+<body>
+
+    <div id="main-container">
+        <section id="form-section">
+            <h2>📝 새 글 작성하기</h2>
+            <form id="add-post-form">
+                <input type="text" id="title" placeholder="제목" required>
+                <input type="text" id="author" placeholder="작성자" required>
+                <input type="number" id="views" placeholder="조회수" required>
+                <button type="submit">게시물 추가</button>
+            </form>
+        </section>
+
+        <section id="post-list-section">
+            <h2>📚 게시물 목록</h2>
+            <div id="post-list">
+                </div>
+        </section>
+    </div>
+
+    <section id="edit-form-section">
+        <h2>✏️ 게시물 수정하기</h2>
+        <form id="edit-post-form">
+            <input type="hidden" id="edit-id"> 
+            <label for="edit-title">제목:</label>
+            <input type="text" id="edit-title" required>
+            <label for="edit-author">작성자:</label>
+            <input type="text" id="edit-author" required>
+            <label for="edit-views">조회수:</label>
+            <input type="number" id="edit-views" required>
+            <button type="submit">수정 완료</button>
+            <button type="button" class="btn-cancel" id="cancel-edit">취소</button>
+        </form>
+    </section>
+
+    <script>
+        const API_URL = 'http://localhost:3000/posts';
+        const postListDiv = document.getElementById('post-list');
+        const addForm = document.getElementById('add-post-form');
+        const editForm = document.getElementById('edit-post-form');
+        const editFormSection = document.getElementById('edit-form-section');
+        const cancelEditBtn = document.getElementById('cancel-edit');
+
+        // [R] Read: 목록 가져오기
+        async function fetchPosts() {
+            try {
+                const response = await fetch(API_URL);
+                const posts = await response.json();
+                
+                postListDiv.innerHTML = '';
+                posts.reverse(); 
+
+                posts.forEach(post => {
+                    const postElement = document.createElement('div');
+                    postElement.classList.add('post-item');
+                    postElement.innerHTML = `
+                        <h3>${post.title} (ID: ${post.id})</h3>
+                        <p>작성자: ${post.author}</p>
+                        <p>조회수: ${post.views}</p>
+                        <div class="buttons">
+                            <button class="btn-edit" data-id="${post.id}">수정</button>
+                            <button class="btn-delete" data-id="${post.id}">삭제</button>
+                        </div>
+                    `;
+                    postListDiv.appendChild(postElement);
+                });
+            } catch (error) {
+                console.error('목록 로딩 오류:', error);
+            }
+        }
+
+        // [C] Create: 새 게시물 추가
+        async function addPost(event) {
+            event.preventDefault(); 
+            const newPost = {
+                title: document.getElementById('title').value,
+                author: document.getElementById('author').value,
+                views: parseInt(document.getElementById('views').value)
+            };
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newPost)
+                });
+                addForm.reset();
+                fetchPosts(); // 목록 새로고침
+            } catch (error) {
+                console.error('추가 오류:', error);
+            }
+        }
+
+        function handleListClick(event) {
+            const clickedElement = event.target; 
+
+            // (1) 삭제 버튼을 눌렀는지 확인
+            if (clickedElement.classList.contains('btn-delete')) {
+                const id = clickedElement.dataset.id; 
+                deletePost(id);
+            }
+            // (2) 수정 버튼을 눌렀는지 확인
+            else if (clickedElement.classList.contains('btn-edit')) {
+                const id = clickedElement.dataset.id; 
+                showEditForm(id);
+            }
+        }
+
+        // [D] Delete: 게시물 삭제
+        async function deletePost(id) {
+            if (!confirm(`정말로 ID ${id} 게시물을 삭제하시겠습니까?`)) {
+                return;
+            }
+            try {
+                await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                fetchPosts(); 
+            } catch (error) {
+                console.error('삭제 오류:', error);
+            }
+        }
+
+        // [U] Update: 1. 수정 폼 보여주기
+        async function showEditForm(id) {
+            try {
+                const response = await fetch(`${API_URL}/${id}`);
+                const post = await response.json();
+                
+                document.getElementById('edit-id').value = post.id;
+                document.getElementById('edit-title').value = post.title;
+                document.getElementById('edit-author').value = post.author;
+                document.getElementById('edit-views').value = post.views;
+                
+                editFormSection.style.display = 'block'; 
+            } catch (error) {
+                console.error('수정 데이터 로딩 오류:', error);
+            }
+        }
+
+        // [U] Update: 2. 실제 데이터 수정
+        async function updatePost(event) {
+            event.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const updatedPost = {
+                title: document.getElementById('edit-title').value,
+                author: document.getElementById('edit-author').value,
+                views: parseInt(document.getElementById('edit-views').value)
+            };
+
+            try {
+                await fetch(`${API_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedPost)
+                });
+                editFormSection.style.display = 'none';
+                fetchPosts();
+            } catch (error) {
+                console.error('수정 오류:', error);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchPosts();
+            addForm.addEventListener('submit', addPost);
+            editForm.addEventListener('submit', updatePost);
+            postListDiv.addEventListener('click', handleListClick);
+            cancelEditBtn.addEventListener('click', () => editFormSection.style.display = 'none');
+        });
+    </script>
+</body>
+</html>
